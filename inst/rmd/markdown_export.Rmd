@@ -1,0 +1,128 @@
+---
+title: "raise question export"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo = F, include = F}
+library(raise)
+```
+
+```{r include=FALSE}
+question_index <- ##index##
+quiz_questions <- quiz$get_questions(include_description = T, heading_level = 1)[question_index]
+```
+
+```{r echo=FALSE, results='hide'}
+library(raise)
+library(exams)
+
+n_questions <- length(quiz_questions)
+
+descriptions <- lapply(quiz_questions, `[[`, "question")
+
+questions <- lapply(quiz_questions, function(question) {
+    if (question$type == "numeric") {
+        ""
+    } else {
+        sapply(question$choices, `[[`, "choice")
+    }
+})
+
+solutions <- lapply(quiz_questions, function(question) {
+    if (question$type == "numeric") {
+        question$correct_answer
+    } else {
+        paste0(as.integer(sapply(question$choices, `[[`, "correct")), collapse = "")
+    }
+})
+
+solutions_list <- lapply(quiz_questions, function(question) {
+    if (question$type == "numeric") {
+        question$correct_answer
+    } else {
+        sapply(question$choices, `[[`, "correct")
+    }
+})
+
+type <- lapply(quiz_questions, function(question) {
+    if (question$type == "numeric") {
+        "num"
+    } else {
+        "schoice"
+    }
+})
+
+```
+
+
+Question
+=========
+
+```{r, echo = F, results = "asis"}
+for (index in 1:n_questions) {
+    cat(paste0(
+        "\n\n",
+        # letters[index],
+        # ") ",
+        descriptions[[index]]
+        #"\n\n",
+        #"\\#\\#ANSWER",
+        #index,
+        #"\\#\\#"
+    ))
+}
+```
+
+```{r, echo = F, results = "asis"}
+if (any(sapply(type, function(x) x == "num"))) {
+    cat("
+
+*Note: Use periods (not commas) for decimal points.*
+
+*Note: Ensure to include at least two decimal places in your calculations.*
+        
+")
+}
+```
+
+
+```{r questionlist, echo = FALSE, results = "asis"}
+answerlist(unlist(questions), markup = "markdown")
+```
+
+
+```{r, echo = F, results = "asis", eval = F}
+cat("
+Solution
+=========
+")
+```
+
+
+```{r, echo = F, results = "asis", eval = F}
+for (index in 1:n_questions) {
+    cat(paste0(
+        "\n\n",
+        letters[index],
+        ") ",
+        solutions[[index]]
+    ))
+}
+```
+
+
+```{r answerlist, echo = FALSE, results = "asis", eval = F}
+answerlist(unlist(solutions_list), markup = "markdown")
+```
+
+Meta-information
+================
+extype: `r if (length(questions) > 1L) "cloze" else type[[1]]`
+exsolution: `r paste(solutions, collapse = "|")`
+exclozetype: `r paste(type, collapse = "|")`
+exname: raise_export
+extol: `r paste0(rep_len(0.05, n_questions), collapse = "|")`

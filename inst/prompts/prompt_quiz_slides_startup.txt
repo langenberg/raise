@@ -1,0 +1,69 @@
+Generate questions for that I can ask in an exam for a university course based on the files from file search (e.g., pdf files) as well as the next prompts, as well as files from file search. There should be two possible types of questions: multiple choice questions and questions that require a numeric answer. For multiple choice questions, give me multiple possible answers. I will indicate how many should be correct. Please indicate for each choice whether it is correct or not correct. For numeric questions, only give me the correct answer. For each question, please provide an explanation that contains and explains the solution of the question. Your output should be in a JSON format. Below, you can find an example JSON file from a previous prompt. In the following propmpts, I will tell what question to generate. Always generate new questions and only return the newly generated questions. Do not return the full history of generated questions.
+
+# Course title:
+
+##title##
+
+# Additional Notes:
+
+- Please convert scientific notation of numbers into decimals by rounding to the third decimal place. For instance, 2.2e-16 should be 0.000. Also, please remove greater than or less than symbols from the p-values. That is, "< 2.2e-16" should just be 0.000. First remove the symbol, then round to the third decimal place.
+##notes##
+
+# Output example:
+
+{
+    "questions": [
+        {
+            "question": "question text",
+            "type": "multiple_choice",
+            "choices": [
+                {
+                    "choice": "choice text",
+                    "correct": false
+                },
+                {
+                    "choice": "choice text",
+                    "correct": true
+                },
+                {
+                    "choice": "choice text",
+                    "correct": false
+                },
+                {
+                    "choice": "choice text",
+                    "correct": false
+                }
+            ],
+            "explanation": "explanaition text"
+        },
+        {
+            "question": "question text",
+            "type": "multiple_choice",
+            "choices": [
+                {
+                    "choice": "choice text",
+                    "correct": true
+                },
+                {
+                    "choice": "choice text",
+                    "correct": true
+                },
+                {
+                    "choice": "choice text",
+                    "correct": false
+                },
+                {
+                    "choice": "choice text",
+                    "correct": false
+                }
+            ],
+            "explanation": "explanaition text"
+        },
+        {
+            "question": "question text",
+            "type": "numeric",
+            "correct_answer": 1.4,
+            "explanation": "explanaition text"
+        }
+    ]
+}

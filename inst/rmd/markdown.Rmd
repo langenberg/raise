@@ -1,0 +1,131 @@
+---
+title: "Logistic regression"
+output: html_document
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+editor_options: 
+  chunk_output_type: console
+params:
+  rdata_path: x
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo = F, include = F}
+library(raise)
+```
+
+```{r, include=FALSE, echo = F, message = F}
+load(rdata_path)
+```
+
+## Data Description
+
+```{r, echo = F, results='asis'}
+cat(data_desc$study_description)
+```
+
+## Variables
+
+### Outcome
+
+```{r, echo = F, results='asis'}
+outcome <- data_desc$variables$outcome_variable
+cat("* ")
+cat(outcome$name)
+cat("\n  - Categories:\n")
+paste0("    + ", names(outcome$categories), ": ", unlist(outcome$categories)) %>% 
+    paste0(collapse = "\n") %>% 
+    cat()
+cat("\n  - ")
+cat(outcome$description)
+```
+
+### Independent Variables
+
+```{r, echo = F, results='asis'}
+variables <- do.call(c, data_desc$variables$independent_variables)
+for (variable in variables) {
+    cat("\n\n* ")
+    cat(variable$name)
+    cat("\n  - Type: ")
+    cat(variable$type)
+    if (variable$type %in% c("binary", "categorical")) {
+        cat("\n  - Categories:\n")
+        paste0("    + ", names(variable$categories), ": ", unlist(variable$categories)) %>% 
+            paste0(collapse = "\n") %>% 
+            cat()
+    }
+    cat("\n  - ")
+    cat(variable$description)
+}
+```
+
+
+## Equation
+
+```{r, echo = F, results='asis'}
+# cat(paste0(
+#     "\\begin{align}\n", 
+#     data_eq$equation$numbers %>% 
+#         str_replace_all("\\\\text\\{([^\\}]+)\\}", "\\1") %>% 
+#         str_replace_all("([^ ^=])[ ]*([+-])", "\\1\\\\\\\\\n\\2") %>% 
+#         str_replace_all("([+-])", "&\\1") %>% 
+#         str_replace_all("_", "\\\\_") %>% 
+#         str_replace_all("&\\+ &\\-", "&- "), 
+#     "\n\\end{align}"
+# ))
+cat(paste0(
+    "\\begin{align}\n", 
+    data_eq$equation$numbers %>% 
+        stringr::str_replace_all("\\\\text\\{([^\\}]+)\\}", "\\1") %>%
+        stringr::str_replace_all("([^ ^=])[ ]*([+-])", "\\1\\\\\\\\\n\\2") %>%
+        stringr::str_replace_all("([+-])", "&\\1") %>%
+        stringr::str_replace_all("_", "\\_") %>%
+        stringr::str_replace_all("&\\+ &\\-", "&- "),
+    "\n\\end{align}"
+))
+```
+
+## Data
+
+```{r}
+head(dat)
+```
+
+## Logistic Regression
+
+```{r, echo = F, include = F}
+myformula <- paste0(
+    data_desc$variables$outcome_variable$name,
+    " ~ ",
+    paste0(
+        sapply(
+            data_eq$coefficients,
+            function(effect) paste0(sapply(effect$variables, function(x) ifelse(x$name == "intercept", 1, x$name)), collapse = "*")
+        ),
+        collapse = " + "
+    )
+) %>% as.formula()
+```
+
+```{r, eval = F}
+mod <- glm(
+    myformula,
+    data = dat,
+    family = "binomial"
+)
+
+summary(mod)
+```
+
+```{r, echo = F}
+mod <- glm(
+    myformula,
+    data = dat,
+    family = "binomial"
+)
+mod$call[[2]] <- myformula
+summary(mod)
+```

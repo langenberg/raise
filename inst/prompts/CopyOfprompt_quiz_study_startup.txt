@@ -1,0 +1,68 @@
+Generate questions for that I can ask in an exam for a university course based on the output of a statistical software below. The output and its underlying data stems from a study. For more context, you can find the study description, the outcome variable, and the independent variables below as well. When asking questions about the output, have yourself inspired by the other details below, materials provided in the next prompts, as well as files from file search (e.g., pdf files). That is, ask questions about the output and the underlying concepts in a way they were presented in the pdf files. There should be two possible types of questions: multiple choice questions and questions that require a numeric answer. For multiple choice questions, give me multiple possible answers. I will indicate how many should be correct. Please indicate for each choice whether it is correct or not correct. For numeric questions, only give me the correct answer. Your output should be in a JSON format. Below, you can find an example JSON file from a previous prompt. In the following propmpts, I will tell what question to generate. Always generate new questions and only return the newly generated questions. Do not return the full history of generated questions.
+
+# Course title:
+
+##title##
+
+# Additional Notes:
+
+- Please convert scientific notation of numbers into decimals by rounding to the third decimal place. For instance, 2.2e-16 should be 0.000. Also, please remove greater than or less than symbols from the p-values. That is, "< 2.2e-16" should just be 0.000. First remove the symbol, then round to the third decimal place.
+##notes##
+
+##study_design##
+
+# Output example:
+
+{
+    "questions": [
+        {
+            "question": "question text",
+            "type": "multiple_choice",
+            "choices": [
+                {
+                    "choice": "choice text",
+                    "correct": false
+                },
+                {
+                    "choice": "choice text",
+                    "correct": true
+                },
+                {
+                    "choice": "choice text",
+                    "correct": false
+                },
+                {
+                    "choice": "choice text",
+                    "correct": false
+                }
+            ]
+        },
+        {
+            "question": "question text",
+            "type": "multiple_choice",
+            "choices": [
+                {
+                    "choice": "choice text",
+                    "correct": true
+                },
+                {
+                    "choice": "choice text",
+                    "correct": true
+                },
+                {
+                    "choice": "choice text",
+                    "correct": false
+                },
+                {
+                    "choice": "choice text",
+                    "correct": false
+                }
+            ]
+        },
+        {
+            "question": "question text",
+            "type": "numeric",
+            "correct_answer": 1.4
+        }
+    ]
+}

@@ -1,0 +1,31 @@
+Package: raise
+Type: Package
+Title: R with AI for Statistical Education
+Version: 0.1
+Date: 2024-06-22
+Authors@R: c(person(given = "Benedikt", family = "Langenberg",
+                    role  = c("aut", "cre"),
+                    email = "benedikt.langenberg@gmail.com")
+            )
+Maintainer: Benedikt Langenberg <benedikt.langenberg@gmail.com>
+Description: To be done.
+Depends:
+    R (>= 4.3.0)
+Imports:
+    reticulate (>= 1.30),
+    rmarkdown (>= 2.26),
+    MASS,
+    R6,
+    dplyr,
+    jsonlite,
+    readr,
+    stringr,
+    exams,
+    english
+License: GPL (>= 2)
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.1
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

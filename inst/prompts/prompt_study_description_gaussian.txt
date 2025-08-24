@@ -1,0 +1,109 @@
+The goal of this prompt is to create a motivating example for a university course. I would later like to simulate a fictive dataset based on this example. Below you can find the title and a description of the course, the number and type of independent variables. Please come up with an applied example of a hypothetical empirical study fitting the theme and the course description. Act like the example stems from an actual study. Please provide a description of the study and the outcome and independent variables that were used. Below, you can also find the type of outcome. {n_independent_variables}. Please state the distribution of the variables. That is, for the continuous variable, please give the mean and the standard deviation. For the binary and categorical variables, please give the proportions of the categories. The data will eventually be analyzed using logistic regression. Since the binary and categorical variables will be dummy coded, please also state the reference category. The reference category should always be the first category. The variable names should only include upper and lower case letters, the character "_", and should not include more than 10 characters. Your answer should be in a JSON format. Below, you can find an example JSON file from a previous prompt. Please use the same format but come up with a completely new example from a totally different study. The example contains a different number of independent variables. Please adapt the output to fit the aforementioned requirements.
+
+# Course title:
+
+{title}
+
+# Course description:
+
+{description}
+
+# Outcome:
+
+{outcome}
+
+# List of independent variables:
+
+{independent_variables_list}
+
+# Additional details:
+
+{details}
+
+# Output example:
+
+{{
+  "study_description": "The description of the study goes here.",
+  "variables": {{
+    "outcome_variable": {{
+      "name": "variable_name",
+      "type": "continuous",
+      "description": "The description of the variable goes here."
+    }},
+    "independent_variables": {{
+      "continuous_variables": [
+        {{
+          "name": "variable_name",
+          "type": "continuous",
+          "distribution": {{
+            "mean": mean,
+            "standard_deviation": standard deviation
+          }},
+          "description": "The description of the variable goes here."
+        }}
+      ],
+      "binary_variables": [
+        {{
+          "name": "variable_name",
+          "type": "binary",
+          "categories": {{
+            "1": "Name of the category",
+            "0": "Name of the category"
+          }},
+          "reference" : "0",
+          "proportion": {{
+            "1": proportion,
+            "0": proportion
+          }},
+          "description": "The description of the variable goes here."
+        }},
+        {{
+          "name": "variable_name",
+          "type": "binary",
+          "categories": {{
+            "1": "Name of the category",
+            "0": "Name of the category"
+          }},
+          "reference" : "0",
+          "proportion": {{
+            "1": proportion,
+            "0": proportion
+          }},
+          "description": "The description of the variable goes here."
+        }},
+        {{
+          "name": "variable_name",
+          "type": "binary",
+          "categories": {{
+            "1": "Name of the category",
+            "0": "Name of the category"
+          }},
+          "reference" : "0",
+          "proportion": {{
+            "1": proportion,
+            "0": proportion
+          }},
+          "description": "The description of the variable goes here."
+        }}
+      ],
+      "categorical_variables": [
+        {{
+          "name": "variable_name",
+          "type": "categorical",
+          "categories": {{
+            "1": "Name of the category",
+            "2": "Name of the category",
+            "3": "Name of the category"
+          }},
+          "reference" : "1",
+          "proportion": {{
+            "1": proportion,
+            "2": proportion,
+            "3": proportion
+          }},
+          "description": "The description of the variable goes here."
+        }}
+      ]
+    }}
+  }}
+}}

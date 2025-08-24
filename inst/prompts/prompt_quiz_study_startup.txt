@@ -1,0 +1,81 @@
+Generate exam questions for a university course based on the statistical software output provided below. The output comes from a study, and you can also find a description of the study, the model equation, the outcome variable, the independent variables, and the coding of the variables below for context.
+
+When formulating exam questions, draw inspiration from the statistical output, the study details, and any additional materials I will provide (e.g., PDFs or other references). Please provide an explanation that contains and explains the solution for each of the question. Focus on two types of questions:
+
+- Multiple choice questions: Provide multiple answer options and indicate whether each option is correct or incorrect. I will specify how many answers should be correct.
+- Numeric answer questions: Provide the correct numerical answer directly.
+
+Ensure the questions cover both the interpretation of the statistical output and the underlying statistical concepts presented in the materials. Return the questions in JSON format, following the structure I provide below.
+
+Only generate new questions each time and do not return the history of previously generated questions.
+
+# Course title:
+
+##title##
+
+# Additional Notes:
+
+- Please convert scientific notation of numbers into decimals by rounding to the third decimal place. For instance, 2.2e-16 should be 0.000. Also, please remove greater than or less than symbols from the p-values. That is, "< 2.2e-16" should just be 0.000. First remove the symbol, then round to the third decimal place.
+- The independent variables are dummy-coded. That is, coefficients in the model equation are expressed in terms of a reference category. Please pay attention to this detail. The reference category of each of the independent variables is stated in the list of independent variables below.
+##notes##
+
+##study_design##
+
+# Output example:
+
+{
+    "questions": [
+        {
+            "question": "question text",
+            "type": "multiple_choice",
+            "choices": [
+                {
+                    "choice": "choice text",
+                    "correct": false
+                },
+                {
+                    "choice": "choice text",
+                    "correct": true
+                },
+                {
+                    "choice": "choice text",
+                    "correct": false
+                },
+                {
+                    "choice": "choice text",
+                    "correct": false
+                }
+            ],
+            "explanation": "explanaition text"
+        },
+        {
+            "question": "question text",
+            "type": "multiple_choice",
+            "choices": [
+                {
+                    "choice": "choice text",
+                    "correct": true
+                },
+                {
+                    "choice": "choice text",
+                    "correct": true
+                },
+                {
+                    "choice": "choice text",
+                    "correct": false
+                },
+                {
+                    "choice": "choice text",
+                    "correct": false
+                }
+            ],
+            "explanation": "explanaition text"
+        },
+        {
+            "question": "question text",
+            "type": "numeric",
+            "correct_answer": 1.4,
+            "explanation": "explanaition text"
+        }
+    ]
+}
