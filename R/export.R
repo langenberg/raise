@@ -469,12 +469,14 @@ failing_questions <- function(questions, destination, precision_mode,
 #' @param qset_ids Character vector of question set IDs to export.
 #' @param session_path Path to the session folder.
 #' @param label Label string for the export (shown in the Exports panel).
-#' @param destination Export format: \code{"pdf"}, \code{"testvision"}, \code{"canvas"}, or \code{"markdown"}.
+#' @param destination Export format: \code{"pdf"}, \code{"testvision"}, \code{"canvas"},
+#'   \code{"markdown"}, or \code{"json"} (one Markdown entry per question, see
+#'   [questions_to_json()]; written as \code{<export id>.json}, figures embedded).
 #' @param precision_mode Numeric precision: \code{"fixed"} or \code{"auto"}.
 #' @param n_digits Number of decimal places when \code{precision_mode = "fixed"}.
 #' @param include_precision_note Whether to append a rounding note below numeric questions.
 #' @param answers Whether to include correct answers and explanations. Only
-#'   \code{"pdf"} and \code{"markdown"} can leave them out; for \code{"canvas"}
+#'   \code{"pdf"}, \code{"markdown"} and \code{"json"} can leave them out; for \code{"canvas"}
 #'   and \code{"testvision"}, \code{FALSE} is ignored with a warning (the LMS
 #'   needs the answers to grade).
 #' @export
@@ -483,13 +485,13 @@ export_question_sets <- function(qset_ids, session_path, label,
                                  precision_mode = "fixed", n_digits = 2L,
                                  include_precision_note = TRUE,
                                  answers = TRUE) {
-  valid <- c("pdf", "testvision", "canvas", "markdown")
+  valid <- c("pdf", "testvision", "canvas", "markdown", "json")
   if (!destination %in% valid)
     return(paste0("Error: destination must be one of: ", paste(valid, collapse = ", ")))
   note <- NULL
-  if (!answers && !destination %in% c("pdf", "markdown")) {
+  if (!answers && !destination %in% c("pdf", "markdown", "json")) {
     note <- paste0("answers = FALSE is ignored for ", destination,
-                   ": the export includes the answers (only pdf and markdown can leave them out).")
+                   ": the export includes the answers (only pdf, markdown and json can leave them out).")
     warning(note, call. = FALSE)
     answers <- TRUE
   }
@@ -526,6 +528,13 @@ export_question_sets <- function(qset_ids, session_path, label,
                             include_precision_note = include_precision_note,
                             file = md_path)
       list(path = md_path)
+    } else if (destination == "json") {
+      json_path <- file.path(out_dir, paste0(combined_id, ".json"))
+      questions_to_json(qset_ids, session_path, answers = answers,
+                        precision_mode = precision_mode, n_digits = n_digits,
+                        include_precision_note = include_precision_note,
+                        file = json_path)
+      list(path = json_path)
     } else {
       list(path = export_to_exams(json_path, out_dir, destination = destination,
                                   precision_mode = precision_mode, n_digits = n_digits,
@@ -539,7 +548,7 @@ export_question_sets <- function(qset_ids, session_path, label,
   if (!is.null(result$error)) {
     unlink(out_dir, recursive = TRUE)
     msg <- paste0("Export failed: ", result$error)
-    bad <- if (destination == "markdown") integer(0) else
+    bad <- if (destination %in% c("markdown", "json")) integer(0) else
       failing_questions(combined_questions, destination, precision_mode,
                         n_digits, include_precision_note, figures_dir(session_path))
     if (length(bad) > 0L)

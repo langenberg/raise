@@ -165,6 +165,7 @@ Add `{width=50%}` after the reference to change the size (default 60% in PDF, Ca
 | PDF | Drawn in place, centred, no caption |
 | Canvas / TestVision | Packed into the ZIP and shown inline |
 | Markdown | Linked as `figures/<file>`, with the files copied to `figures/` next to the `.md`; the download is then a ZIP. `questions_to_markdown(..., figures = "embed")` puts the images into the Markdown itself (one self-contained file). |
+| JSON | Embedded as data URIs by default; `questions_to_json(..., figures = "copy")` links them and copies the files next to the `.json`. |
 
 Width attributes (`{width=50%}`) are Pandoc/Quarto syntax; Jupyter shows them as text.
 
@@ -364,17 +365,18 @@ Question sets can be exported to four formats:
 | `TestVision` | ZIP archive | TestVision LMS |
 | `Canvas` | ZIP archive | Canvas LMS |
 | `Markdown` | `.md` file | Notebooks, Quarto documents, course pages |
+| `JSON` | `.json` file | Placing single questions elsewhere (e.g. each question under its exercise in a notebook) |
 
 Export requires LaTeX to be installed on your system for PDF output. TestVision and Canvas exports produce ZIP archives (built with the `exams` package). For questions linked to a study, the study's regression output is shown above each question in every format.
 
-PDF and Markdown exports can leave out the answers and explanations (**Include answers and explanations** unchecked in the export dialog, or `answers = FALSE`), e.g. for a student handout. Canvas and TestVision always include them, since the LMS needs them for grading. For these two formats the setting is ignored: the app shows a notification, and from R (or through RAISE) you get a warning and a note in the returned message. The export's **Show** modal says whether the answers are included.
+PDF, Markdown and JSON exports can leave out the answers and explanations (**Include answers and explanations** unchecked in the export dialog, or `answers = FALSE`), e.g. for a student handout. Canvas and TestVision always include them, since the LMS needs them for grading. For these two formats the setting is ignored: the app shows a notification, and from R (or through RAISE) you get a warning and a note in the returned message. The export's **Show** modal says whether the answers are included.
 
 ### Exporting via the state panel
 
 Click **Export** below the question sets. The export dialog lists all question sets with a checkbox each (and the types of their questions); all checked sets are merged into one export. Then set:
 
 1. **Export label** (required, e.g. `Midterm Exam 2026`): names the export folder (`<label>_<timestamp>`).
-2. **Format**: PDF, TestVision, Canvas or Markdown.
+2. **Format**: PDF, TestVision, Canvas, Markdown or JSON.
 3. **Decimal places for numeric questions**: Fixed 1, 2 or 3, or Auto (from the correct answer). Answers are rounded accordingly, and Canvas/TestVision get the matching tolerance.
 4. **Show precision note**: adds a line under each numeric question saying how many decimals to give.
 5. **Include answers and explanations** (see above).
@@ -396,7 +398,7 @@ RAISE asks for the label and confirms the destination format before calling `exp
 Completed exports appear in the **Exports** section of the state panel, listed newest first. Each export card shows the destination format, timestamp, question count, and filename. Three buttons are available:
 
 - **Show** — opens a modal with the export metadata (format, number of questions, whether answers are included) and a preview of every question in the combined set.
-- **Download** — downloads the `.pdf`, `.zip` or `.md` file; a Markdown export with figures downloads as a ZIP (the `.md` plus its `figures/` folder).
+- **Download** — downloads the `.pdf`, `.zip`, `.md` or `.json` file; a Markdown export with figures downloads as a ZIP (the `.md` plus its `figures/` folder).
 - **Delete** — two-step Yes / Cancel confirmation; permanently removes the export folder.
 
 You can also list or delete exports via RAISE:
@@ -452,6 +454,12 @@ questions_to_markdown("lecture1", "path/to/session", answers = FALSE,
                       file = "quiz.md")                 # questions only
 questions_to_markdown("lecture1", "path/to/session", answers = TRUE,
                       heading_level = 3, choice_style = "letter")
+```
+
+`questions_to_json()` returns the same Markdown split per question, as JSON: one entry per question with `number`, `qset_id`, `id`, `type`, `question` (text, exhibit, choices, rounding note) and, with `answers = TRUE`, `answer` (correct answer and explanation). Use it to place single questions somewhere else, e.g. each quiz question under the exercise it belongs to in a notebook.
+
+```r
+questions_to_json("tutorial2", "path/to/session", file = "tutorial2.json")
 ```
 
 `format_questions()` returns the same content as an R list (one element per question with its text, choices, rounded answer and rounding note), for building other formats.
@@ -511,7 +519,7 @@ The following 31 tools are available to RAISE. They are called automatically dur
 | `list_question_sets` | List all question sets in the session |
 | `load_question_set` | Load the full content of a question set, including question IDs |
 | `list_exports` | List all past exports |
-| `export_question_sets` | Export one or more question sets to PDF, TestVision, Canvas, or Markdown |
+| `export_question_sets` | Export one or more question sets to PDF, TestVision, Canvas, Markdown, or JSON |
 | `delete_exports` | Delete one or more export folders |
 
 ### Figure tools

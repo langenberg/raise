@@ -187,6 +187,11 @@ test_that("exports include figures (PDF, Canvas, Markdown copy and embed)", {
     md <- questions_to_markdown("set1", s, figures = "embed")
     expect_match(md, "](data:image/png;base64,", fixed = TRUE)
     expect_false(grepl("figures/", md, fixed = TRUE))
+    js <- questions_to_json("set1", s)
+    expect_match(js, "](data:image/png;base64,", fixed = TRUE)
+    expect_false(grepl("figures/", js, fixed = TRUE))
+    questions_to_json("set1", s, file = "q.json", figures = "copy")
+    expect_true(file.exists(file.path("figures", f)))
   })
 })
 

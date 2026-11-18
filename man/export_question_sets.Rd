@@ -22,7 +22,9 @@ export_question_sets(
 
 \item{label}{Label string for the export (shown in the Exports panel).}
 
-\item{destination}{Export format: \code{"pdf"}, \code{"testvision"}, \code{"canvas"}, or \code{"markdown"}.}
+\item{destination}{Export format: \code{"pdf"}, \code{"testvision"}, \code{"canvas"},
+\code{"markdown"}, or \code{"json"} (one Markdown entry per question, see
+\code{\link[=questions_to_json]{questions_to_json()}}; written as \code{<export id>.json}, figures embedded).}
 
 \item{precision_mode}{Numeric precision: \code{"fixed"} or \code{"auto"}.}
 
@@ -31,7 +33,7 @@ export_question_sets(
 \item{include_precision_note}{Whether to append a rounding note below numeric questions.}
 
 \item{answers}{Whether to include correct answers and explanations. Only
-\code{"pdf"} and \code{"markdown"} can leave them out; for \code{"canvas"}
+\code{"pdf"}, \code{"markdown"} and \code{"json"} can leave them out; for \code{"canvas"}
 and \code{"testvision"}, \code{FALSE} is ignored with a warning (the LMS
 needs the answers to grade).}
 }

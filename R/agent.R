@@ -867,7 +867,8 @@ make_chat <- function(session_env, system_prompt, provider = raise_default_provi
       )
     }),
     description = paste(
-      "Export one or more question sets to PDF, TestVision, Canvas, or Markdown.",
+      "Export one or more question sets to PDF, TestVision, Canvas, Markdown, or JSON",
+      "(JSON: one Markdown entry per question, for placing single questions elsewhere, e.g. in notebooks).",
       "Merges all questions from the specified sets into a single export.",
       "Always ask the user for a label for the export before calling.",
       "Always confirm the destination format with the user before calling."
@@ -879,7 +880,7 @@ make_chat <- function(session_env, system_prompt, provider = raise_default_provi
         required    = TRUE
       ),
       destination = ellmer::type_enum(
-        "Export format", values = c("pdf", "testvision", "canvas", "markdown"), required = TRUE
+        "Export format", values = c("pdf", "testvision", "canvas", "markdown", "json"), required = TRUE
       ),
       label       = ellmer::type_string(
         description = "Label for the export (e.g. 'Midterm Exam 2026'). Shown on the export card.",
@@ -890,7 +891,7 @@ make_chat <- function(session_env, system_prompt, provider = raise_default_provi
         required    = FALSE
       ),
       answers = ellmer::type_boolean(
-        description = "Whether to include correct answers and explanations. Defaults to TRUE. FALSE (a student version) only applies to pdf and markdown; canvas and testvision ignore it and always include the answers.",
+        description = "Whether to include correct answers and explanations. Defaults to TRUE. FALSE (a student version) only applies to pdf, markdown and json; canvas and testvision ignore it and always include the answers.",
         required    = FALSE
       )
     ),

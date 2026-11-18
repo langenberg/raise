@@ -132,7 +132,8 @@
         shiny::tagAppendAttributes(
           shiny::selectInput("export_modal_destination", label = NULL,
                              choices  = c("PDF" = "pdf", "TestVision" = "testvision",
-                                          "Canvas" = "canvas", "Markdown" = "markdown"),
+                                          "Canvas" = "canvas", "Markdown" = "markdown",
+                                          "JSON" = "json"),
                              selected = "pdf", width = "100%"),
           style = "flex:1;margin-bottom:0;"
         )
@@ -973,12 +974,7 @@ render_state_panel <- function(session_path, confirm_state = NULL) {
     for (folder_name in export_folders) {
       folder_path <- file.path(exports_dir, folder_name)
 
-      artifact <- NULL
-      for (ext in c("zip", "pdf", "md")) {
-        matches <- list.files(folder_path, pattern = paste0("\\.", ext, "$"),
-                              full.names = TRUE)
-        if (length(matches) > 0L) { artifact <- matches[[1L]]; break }
-      }
+      artifact <- export_artifact(folder_path)
       if (is.null(artifact)) next
 
       meta <- tryCatch(
@@ -2035,12 +2031,7 @@ raise_server <- function(input, output, session, initial_session_path = NULL,
         fld <- folder_name
         shiny::observeEvent(input[[paste0("show_export_", fld)]], {
           folder_path <- file.path(sess, "exports", fld)
-          artifact <- NULL
-          for (ext in c("zip", "pdf", "md")) {
-            matches <- list.files(folder_path, pattern = paste0("\\.", ext, "$"),
-                                  full.names = TRUE)
-            if (length(matches) > 0L) { artifact <- matches[[1L]]; break }
-          }
+          artifact <- export_artifact(folder_path)
           if (is.null(artifact)) return()
           meta <- tryCatch(
             jsonlite::read_json(file.path(folder_path, "meta.json")),
@@ -2075,18 +2066,14 @@ raise_server <- function(input, output, session, initial_session_path = NULL,
       local({
         fname       <- folder_name
         folder_path <- file.path(exports_dir, fname)
-        art <- NULL
-        for (ext in c("zip", "pdf", "md")) {
-          matches <- list.files(folder_path, pattern = paste0("\\.", ext, "$"),
-                                full.names = TRUE)
-          if (length(matches) > 0L) { art <- matches[[1L]]; break }
-        }
+        art <- export_artifact(folder_path)
         if (is.null(art)) return(invisible(NULL))
         art_ext <- tools::file_ext(art)
         # A Markdown export with figures/ next to it downloads as a zip.
         with_figs <- art_ext == "md" && dir.exists(file.path(folder_path, "figures"))
         mime    <- if (with_figs) "application/zip" else
-          switch(art_ext, zip = "application/zip", md = "text/markdown", "application/pdf")
+          switch(art_ext, zip = "application/zip", md = "text/markdown",
+                 json = "application/json", "application/pdf")
         output[[paste0("export_dl_", fname)]] <- shiny::downloadHandler(
           filename    = function() if (with_figs) sub("\\.md$", ".zip", basename(art)) else basename(art),
           content     = function(path) {

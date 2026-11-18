@@ -2,6 +2,10 @@
 
 Not released yet.
 
+### New features
+
+* **JSON export, one Markdown entry per question.** New `questions_to_json()` and `export_question_sets(destination = "json")` (also in the app's export dialog and the agent's export tool). Each entry has the question's number, set, id and type, the question as Markdown (text, exhibit, choices, rounding note) and, with `answers = TRUE`, the answer part (correct answer, explanation). The Markdown is the same as in `questions_to_markdown()`. For tools that place single questions elsewhere, e.g. each quiz question under its exercise in a notebook. Figures are embedded as data URIs by default.
+
 # RAISE 0.2.0
 
 Released 2026-11-05.

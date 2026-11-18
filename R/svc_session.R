@@ -131,6 +131,17 @@ list_question_sets <- function(session_path) {
   jsonlite::toJSON(results, pretty = TRUE, auto_unbox = TRUE)
 }
 
+# The artifact of an export folder: its .zip, .pdf or .md file, or <folder>.json
+# for a json export (combined.json and meta.json sit in every export folder).
+export_artifact <- function(folder_path) {
+  for (ext in c("zip", "pdf", "md")) {
+    matches <- list.files(folder_path, pattern = paste0("\\.", ext, "$"), full.names = TRUE)
+    if (length(matches) > 0L) return(matches[[1L]])
+  }
+  json <- file.path(folder_path, paste0(basename(folder_path), ".json"))
+  if (file.exists(json)) json else NULL
+}
+
 #' Return a JSON array summarising all exports in the session (newest first).
 #' @param session_path Path to the session folder.
 #' @export
@@ -146,11 +157,7 @@ list_exports <- function(session_path) {
       jsonlite::read_json(file.path(folder_path, "meta.json")),
       error = function(e) list()
     )
-    artifact <- NULL
-    for (ext in c("zip", "pdf", "md")) {
-      matches <- list.files(folder_path, pattern = paste0("\\.", ext, "$"), full.names = TRUE)
-      if (length(matches) > 0L) { artifact <- matches[[1L]]; break }
-    }
+    artifact <- export_artifact(folder_path)
     results <- c(results, list(list(
       export_id    = folder,
       label        = meta$label %||% folder,

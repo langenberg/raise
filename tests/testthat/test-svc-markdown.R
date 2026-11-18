@@ -109,6 +109,68 @@ test_that("export_question_sets writes a markdown export with meta.json", {
   })
 })
 
+test_that("questions_to_json has one entry per question, same Markdown as questions_to_markdown", {
+  withr::with_tempdir({
+    write_md_session()
+    q <- jsonlite::fromJSON(questions_to_json(c("set_a", "set_b"), "."), simplifyVector = FALSE)$questions
+    expect_length(q, 3L)
+    expect_equal(vapply(q, `[[`, 1L, "number"), 1:3)
+    expect_equal(q[[3]]$qset_id, "set_b")
+    expect_equal(q[[3]]$id, 7L)
+    expect_equal(q[[2]]$type, "numeric")
+    md <- questions_to_markdown(c("set_a", "set_b"), ".")
+    rebuilt <- paste0(paste(vapply(q, function(x) paste0("## Question ", x$number, "\n\n",
+                                                         x$question, "\n\n", x$answer), ""),
+                            collapse = "\n\n"), "\n")
+    expect_identical(rebuilt, md)
+    expect_match(q[[2]]$question, "2 decimal places", fixed = TRUE)
+    expect_equal(q[[2]]$answer, "**Correct answer:** 0.61 (unrounded: 0.6061)\n\n**Explanation:** Read it off.")
+    expect_equal(q[[3]]$answer, "**Correct answer:** 0.50")
+  })
+})
+
+test_that("questions_to_json without answers, and to a file", {
+  withr::with_tempdir({
+    write_md_session()
+    q <- jsonlite::fromJSON(questions_to_json("set_a", ".", answers = FALSE),
+                            simplifyVector = FALSE)$questions
+    expect_null(q[[1]]$answer)
+    expect_false(any(grepl("Correct answer", vapply(q, `[[`, "", "question"))))
+    res <- withVisible(questions_to_json("set_a", ".", file = "q.json"))
+    expect_false(res$visible)
+    expect_identical(paste(readLines("q.json", encoding = "UTF-8"), collapse = "\n"), res$value)
+  })
+})
+
+test_that("export_question_sets writes a json export that list_exports finds", {
+  withr::with_tempdir({
+    write_md_session()
+    msg <- export_question_sets("set_a", ".", label = "Quiz", destination = "json",
+                                answers = FALSE)
+    expect_match(msg, "Exported 2 question")
+    dir  <- list.dirs("exports", recursive = FALSE)
+    art  <- file.path(dir, paste0(basename(dir), ".json"))
+    expect_true(file.exists(art))
+    q <- jsonlite::read_json(art)$questions
+    expect_length(q, 2L)
+    expect_null(q[[1]]$answer)
+    expect_equal(export_artifact(dir), art)
+    meta <- jsonlite::read_json(file.path(dir, "meta.json"))
+    expect_equal(meta$destination, "json")
+    expect_false(meta$answers)
+    ex <- jsonlite::fromJSON(list_exports("."))
+    expect_true(ex$has_artifact)
+  })
+})
+
+test_that("export_artifact ignores combined.json and meta.json", {
+  withr::with_tempdir({
+    dir.create("e_20260101_000000")
+    for (f in c("combined.json", "meta.json")) writeLines("{}", file.path("e_20260101_000000", f))
+    expect_null(export_artifact("e_20260101_000000"))
+  })
+})
+
 test_that("export_question_sets rejects unknown destinations", {
   withr::with_tempdir({
     write_md_session()
