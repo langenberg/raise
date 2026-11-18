@@ -1,7 +1,7 @@
 Package: RAISE
 Type: Package
 Title: R with AI for Statistical Education (RAISE): AI-Powered Statistics Exam Question Generator
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: person("Benedikt", "Langenberg", role = c("aut", "cre"),
     email = "benedikt.langenberg@gmail.com")
 Description: Generates realistic exam questions grounded in simulated

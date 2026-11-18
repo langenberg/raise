@@ -1,3 +1,7 @@
+# RAISE 0.3.0
+
+Not released yet.
+
 # RAISE 0.2.0
 
 Released 2026-11-05.
