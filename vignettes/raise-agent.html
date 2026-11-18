@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Using the RAISE Agent</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Using the RAISE Agent</h1>
+
+
+
+<p>RAISE is a Shiny application that uses an AI agent — called
+<strong>RAISE</strong> throughout this document — to help university
+lecturers design hypothetical studies and write statistics exam
+questions grounded in real regression output. This vignette explains
+every feature of the application.</p>
+<hr />
+<div id="launching-the-app" class="section level2">
+<h2>Launching the app</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(RAISE)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">run_raise</span>()</span></code></pre></div>
+<p>You can also pass a session path directly so the app opens that
+session immediately on startup:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">run_raise</span>(<span class="at">session_path =</span> <span class="st">&quot;~/exams/2026-spring&quot;</span>)</span></code></pre></div>
+<p><code>run_raise()</code> requires the environment variable
+<code>ANTHROPIC_API_KEY</code> to be set. RAISE will not be able to
+reach the language model without it.</p>
+<hr />
+</div>
+<div id="sessions" class="section level2">
+<h2>Sessions</h2>
+<p>All work in RAISE is stored in a <strong>session folder</strong> — a
+plain directory on your computer that you choose. The session folder is
+the only location RAISE can read from or write to; it never accesses
+files outside it.</p>
+<div id="opening-a-session" class="section level3">
+<h3>Opening a session</h3>
+<p>Type a path into the <strong>Session</strong> text field in the
+sidebar and click <strong>Open</strong>, or use the
+<strong>Browse…</strong> button to pick a folder with a file browser.
+You can also press Enter after typing a path. Relative paths are
+resolved from R’s current working directory.</p>
+<p>If the folder does not exist yet, RAISE creates it automatically
+together with four subdirectories:</p>
+<pre><code>&lt;session&gt;/
+  materials/       &lt;- uploaded lecture files
+  studies/         &lt;- one subfolder per study
+  question_sets/   &lt;- one JSON file per question set
+  exports/         &lt;- one subfolder per export</code></pre>
+</div>
+<div id="session-persistence" class="section level3">
+<h3>Session persistence</h3>
+<p>Every conversation turn is saved to
+<code>&lt;session&gt;/chat.rds</code> automatically after each exchange.
+When you reopen an existing session, the full conversation history is
+restored exactly as you left it — tool results, formatted output, and
+all — so RAISE can continue where you left off without losing
+context.</p>
+</div>
+<div id="clearing-the-chat" class="section level3">
+<h3>Clearing the chat</h3>
+<p>While a session is open, a <strong>Clear chat</strong> button appears
+below the Open button. Clicking it deletes <code>chat.rds</code> and
+starts a fresh conversation with RAISE. The studies, question sets,
+materials, and exports in the session folder are <strong>not</strong>
+affected — only the conversation history is reset. RAISE will greet you
+again and summarise the existing session content.</p>
+<hr />
+</div>
+</div>
+<div id="materials" class="section level2">
+<h2>Materials</h2>
+<p>Lecture slides, reading excerpts, or any other reference text can be
+uploaded as <strong>materials</strong>. RAISE can read material files
+and use their content as the basis for exam questions.</p>
+<div id="uploading-a-material" class="section level3">
+<h3>Uploading a material</h3>
+<p>Use the <strong>Upload…</strong> button in the Materials section of
+the sidebar. Supported formats are PDF, Markdown (<code>.md</code>), and
+plain text (<code>.txt</code>). The file is copied to
+<code>&lt;session&gt;/materials/</code> and immediately listed below the
+upload button.</p>
+</div>
+<div id="using-materials-in-question-generation" class="section level3">
+<h3>Using materials in question generation</h3>
+<p>Once a file is uploaded, tell RAISE to use it:</p>
+<blockquote>
+<p><em>“Generate five questions based on lecture3.pdf.”</em></p>
+</blockquote>
+<p>RAISE will call <code>load_material</code> internally to read the
+file and then generate questions whose content is grounded in that text.
+RAISE can combine a lecture file with regression output from a study in
+the same set of questions.</p>
+</div>
+<div id="deleting-a-material" class="section level3">
+<h3>Deleting a material</h3>
+<p>Each material entry in the sidebar has a <strong>Delete</strong>
+button. Clicking it once shows an inline <em>“Delete? Yes / Cancel”</em>
+confirmation. Clicking <strong>Yes</strong> permanently removes the file
+from <code>materials/</code>. You can also ask RAISE:</p>
+<blockquote>
+<p><em>“Delete the file lecture3.pdf.”</em></p>
+</blockquote>
+<p>RAISE will ask you to confirm before removing it.</p>
+<hr />
+</div>
+</div>
+<div id="studies" class="section level2">
+<h2>Studies</h2>
+<p>A <strong>study</strong> is a fully designed and simulated
+statistical scenario: a hypothetical empirical study with defined
+variables, a correlation structure, regression coefficients, and the
+regression output produced by running <code>lm()</code> or
+<code>glm()</code> in R. Studies are the numerical foundation for exam
+questions — every number in a question must come from a study’s R
+output, never from the model’s imagination.</p>
+<p>Each study is stored as a subfolder inside
+<code>&lt;session&gt;/studies/</code> and progresses through four
+statuses as it is built:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Status</th>
+<th>Badge</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>description_saved</code></td>
+<td>🟡</td>
+<td>Title, context, and variables saved</td>
+</tr>
+<tr class="even">
+<td><code>correlations_set</code></td>
+<td>🟠</td>
+<td>Correlation matrix saved</td>
+</tr>
+<tr class="odd">
+<td><code>coefficients_set</code></td>
+<td>🔵</td>
+<td>Regression coefficients saved</td>
+</tr>
+<tr class="even">
+<td><code>simulated</code></td>
+<td>🟢</td>
+<td>Dataset simulated; regression output available</td>
+</tr>
+</tbody>
+</table>
+<div id="creating-a-study-the-four-step-workflow" class="section level3">
+<h3>Creating a study — the four-step workflow</h3>
+<p>RAISE guides you through study creation step by step. Start by
+telling RAISE what you want:</p>
+<blockquote>
+<p><em>“Create a study about exam performance and study habits using
+linear regression.”</em></p>
+</blockquote>
+<p>RAISE proceeds through four steps, presenting its proposal at each
+step and asking for your confirmation before saving anything to
+disk.</p>
+<p><strong>Step 1 — Description and variables.</strong> RAISE proposes a
+title, a context paragraph describing the hypothetical study, and a list
+of 3–6 independent variables with their types (continuous, binary, or
+categorical). It asks: <em>“Does this look right, or would you like to
+change anything?”</em> Confirm or request changes; RAISE then calls
+<code>save_study</code>.</p>
+<p><strong>Step 2 — Correlation matrix.</strong> RAISE proposes a
+correlation matrix for the independent variables, presented as a
+labelled table. It asks whether to save or adjust. On confirmation,
+<code>save_correlations</code> is called.</p>
+<p><strong>Step 3 — Regression coefficients.</strong> RAISE proposes
+coefficients that produce educationally interesting results — at least
+one significant and one non-significant predictor. It asks whether to
+save or adjust. On confirmation, <code>save_coefficients</code> is
+called.</p>
+<p><strong>Step 4 — R simulation.</strong> RAISE runs the simulation in
+R (<code>lm()</code> or <code>glm()</code>) and presents the full
+regression output, including odds ratios for logistic models. It asks:
+<em>“Are you happy with these results, or would you like to adjust
+anything?”</em> If you want changes, RAISE can redo any earlier step,
+automatically re-running all subsequent steps.</p>
+</div>
+<div id="study-cards-in-the-state-panel" class="section level3">
+<h3>Study cards in the state panel</h3>
+<p>The right-hand column of the app shows the <strong>state
+panel</strong>, which lists all studies in the current session. Each
+study card displays the title, a colour-coded status badge, and the
+regression type. Two buttons are available:</p>
+<ul>
+<li><strong>Show</strong> — opens a modal with the full study design:
+variables (name, label, role, type, distribution), the correlation
+matrix, the coefficients table, and the regression output (once
+simulated). For logistic models the odds ratio table is shown as
+well.</li>
+<li><strong>Delete</strong> — clicking once shows an inline <em>“Delete?
+Yes / Cancel”</em> confirmation. Clicking <strong>Yes</strong>
+permanently deletes the study folder and all its simulation artefacts.
+Any question sets that still reference the deleted study will show a
+warning badge.</li>
+</ul>
+<p>You can also ask RAISE to delete studies via chat:</p>
+<blockquote>
+<p><em>“Delete the exam performance study.”</em></p>
+</blockquote>
+<hr />
+</div>
+</div>
+<div id="question-sets" class="section level2">
+<h2>Question Sets</h2>
+<p>A <strong>question set</strong> is a named collection of exam
+questions saved as a JSON file in
+<code>&lt;session&gt;/question_sets/</code>. Each question set is linked
+to a study, a set of materials, or both. Questions come in two
+types:</p>
+<ul>
+<li><strong>Multiple choice</strong> (badge <code>MC</code>, blue) — at
+least four choices, one or more marked correct.</li>
+<li><strong>Numeric</strong> (badge <code>#</code>, grey) — a single
+numerical answer with a tolerance band.</li>
+</ul>
+<div id="generating-questions" class="section level3">
+<h3>Generating questions</h3>
+<p>Tell RAISE which source to use and how many questions you want:</p>
+<blockquote>
+<p><em>“Write six questions based on the exam performance
+study.”</em></p>
+</blockquote>
+<blockquote>
+<p><em>“Generate four questions from lecture3.pdf — two multiple choice
+and two numeric.”</em></p>
+</blockquote>
+<p>RAISE reads the source (calling <code>load_study_context</code> or
+<code>load_material</code> as needed), drafts the questions in its
+response, and asks: <em>“Shall I save these N questions, or would you
+like to adjust anything?”</em> All numerical values are taken directly
+from the R output — RAISE never invents numbers.</p>
+<p>After you confirm, RAISE calls <code>save_question_set</code> and the
+set appears immediately in the state panel.</p>
+</div>
+<div id="editing-question-sets" class="section level3">
+<h3>Editing question sets</h3>
+<p>You can ask RAISE to revise a saved set at any point:</p>
+<blockquote>
+<p><em>“Remove question 3 from the exam performance set.”</em></p>
+</blockquote>
+<blockquote>
+<p><em>“Rewrite question 2 to focus on the confidence interval
+instead.”</em></p>
+</blockquote>
+<blockquote>
+<p><em>“Add two more questions about model fit.”</em></p>
+</blockquote>
+<p>RAISE uses <code>remove_questions</code>,
+<code>update_questions</code>, and <code>add_questions</code>
+respectively. It always loads the set first to look up the integer
+question IDs, and asks for your confirmation before modifying the
+file.</p>
+</div>
+<div id="question-set-cards-in-the-state-panel" class="section level3">
+<h3>Question set cards in the state panel</h3>
+<p>Each question set card shows the topic name, the question count, and
+a row of type badges — one <code>MC</code> or <code>#</code> badge per
+question; hovering over a badge shows the first 90 characters of the
+question text. A warning label (<code>[!] study deleted</code>) appears
+if the linked study has been removed. Two buttons are available:</p>
+<ul>
+<li><strong>Show</strong> — opens a modal with the full question set:
+metadata (linked study, source materials, creation date, model) and
+every question with its choices or answer, tolerance, explanation, and
+exhibit text. Correct choices are highlighted in green.</li>
+<li><strong>Delete</strong> — two-step Yes / Cancel confirmation;
+permanently removes the JSON file.</li>
+</ul>
+<p>Deleting a question set via RAISE:</p>
+<blockquote>
+<p><em>“Delete the question set about regression diagnostics.”</em></p>
+</blockquote>
+<hr />
+</div>
+</div>
+<div id="exporting-question-sets" class="section level2">
+<h2>Exporting Question Sets</h2>
+<p>Question sets can be exported to three formats for use in learning
+management systems:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Format</th>
+<th>Output</th>
+<th>Suitable for</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>PDF</code></td>
+<td>PDF file</td>
+<td>Printing / manual upload</td>
+</tr>
+<tr class="even">
+<td><code>TestVision</code></td>
+<td>ZIP archive</td>
+<td>TestVision LMS</td>
+</tr>
+<tr class="odd">
+<td><code>Canvas</code></td>
+<td>ZIP archive</td>
+<td>Canvas LMS</td>
+</tr>
+</tbody>
+</table>
+<p>Export requires LaTeX to be installed on your system for PDF output.
+TestVision and Canvas exports produce ZIP archives.</p>
+<div id="exporting-via-the-state-panel" class="section level3">
+<h3>Exporting via the state panel</h3>
+<p>Check the checkbox on one or more question set cards. All checked
+sets are merged into a single export. Then:</p>
+<ol style="list-style-type: decimal">
+<li>Optionally type a <strong>Prefix</strong> in the text field
+(e.g. <code>midterm</code>). If left empty, the prefix defaults to
+<code>combined</code>.</li>
+<li>Choose a format from the <strong>dropdown</strong> (PDF / TestVision
+/ Canvas).</li>
+<li>Click <strong>Export selected</strong>.</li>
+</ol>
+<p>A single question set and multiple sets are handled the same way —
+selecting multiple sets merges all their questions into one export
+file.</p>
+</div>
+<div id="exporting-via-raise" class="section level3">
+<h3>Exporting via RAISE</h3>
+<p>You can also ask RAISE to export directly from the chat:</p>
+<blockquote>
+<p><em>“Export the exam performance question set as PDF.”</em></p>
+</blockquote>
+<blockquote>
+<p><em>“Export all question sets together as a TestVision ZIP, using the
+prefix ‘midterm’.”</em></p>
+</blockquote>
+<p>RAISE will ask you to confirm the destination format before
+proceeding, then call <code>export_question_sets</code>.</p>
+</div>
+<div id="export-cards-in-the-state-panel" class="section level3">
+<h3>Export cards in the state panel</h3>
+<p>Completed exports appear in the <strong>Exports</strong> section of
+the state panel, listed newest first. Each export card shows the
+destination format, timestamp, question count, and filename. Three
+buttons are available:</p>
+<ul>
+<li><strong>Show</strong> — opens a modal with the export metadata and a
+preview of every question in the combined set.</li>
+<li><strong>Download</strong> — downloads the <code>.pdf</code> or
+<code>.zip</code> file directly to your browser.</li>
+<li><strong>Delete</strong> — two-step Yes / Cancel confirmation;
+permanently removes the export folder.</li>
+</ul>
+<p>You can also list or delete exports via RAISE:</p>
+<blockquote>
+<p><em>“Show me all past exports.”</em></p>
+</blockquote>
+<blockquote>
+<p><em>“Delete the export from last week.”</em></p>
+</blockquote>
+<hr />
+</div>
+</div>
+<div id="talking-to-raise" class="section level2">
+<h2>Talking to RAISE</h2>
+<p>RAISE is a conversational agent. You do not need to use menus or
+buttons for most actions — describing what you want in plain language is
+sufficient. Examples:</p>
+<table>
+<colgroup>
+<col width="34%" />
+<col width="65%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>You say</th>
+<th>What RAISE does</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><em>“Create a study about burnout in healthcare workers.”</em></td>
+<td>Starts the study creation workflow</td>
+</tr>
+<tr class="even">
+<td><em>“The correlation between age and tenure should be higher, around
+0.6.”</em></td>
+<td>Regenerates and resaves the correlation matrix</td>
+</tr>
+<tr class="odd">
+<td><em>“Simulate the study.”</em></td>
+<td>Calls <code>simulate_study</code> and shows the regression
+output</td>
+</tr>
+<tr class="even">
+<td><em>“Write 5 questions based on this study.”</em></td>
+<td>Loads study context and drafts questions</td>
+</tr>
+<tr class="odd">
+<td><em>“Reword question 4 to be clearer.”</em></td>
+<td>Calls <code>update_questions</code> after loading question IDs</td>
+</tr>
+<tr class="even">
+<td><em>“Delete the burnout study.”</em></td>
+<td>Asks for confirmation, then calls <code>delete_studies</code></td>
+</tr>
+<tr class="odd">
+<td><em>“Export the burnout questions as PDF.”</em></td>
+<td>Asks for confirmation, then calls
+<code>export_question_sets</code></td>
+</tr>
+</tbody>
+</table>
+<p>RAISE always asks for your confirmation before writing, modifying, or
+deleting anything on disk.</p>
+<div id="sandbox-guarantee" class="section level3">
+<h3>Sandbox guarantee</h3>
+<p>RAISE reads and writes <strong>only within the active session
+folder</strong>. It cannot access files elsewhere on your system, make
+network requests (other than to the Claude API), or execute arbitrary
+code outside the controlled simulation pipeline.</p>
+<hr />
+</div>
+</div>
+<div id="agent-tool-reference" class="section level2">
+<h2>Agent tool reference</h2>
+<p>The following tools are available to RAISE. They are called
+automatically during conversation — you do not invoke them directly.</p>
+<div id="study-creation-tools" class="section level3">
+<h3>Study creation tools</h3>
+<table>
+<colgroup>
+<col width="31%" />
+<col width="68%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Tool</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>save_study</code></td>
+<td>Save study title, context, regression type, and variable list (step
+1 of 4)</td>
+</tr>
+<tr class="even">
+<td><code>save_correlations</code></td>
+<td>Save the predictor correlation matrix (step 2 of 4)</td>
+</tr>
+<tr class="odd">
+<td><code>save_coefficients</code></td>
+<td>Save regression coefficients (step 3 of 4)</td>
+</tr>
+<tr class="even">
+<td><code>simulate_study</code></td>
+<td>Run the R simulation and produce regression output (step 4 of
+4)</td>
+</tr>
+<tr class="odd">
+<td><code>delete_studies</code></td>
+<td>Delete one or more studies and all their artefacts</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="question-generation-and-editing-tools" class="section level3">
+<h3>Question generation and editing tools</h3>
+<table>
+<colgroup>
+<col width="31%" />
+<col width="68%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Tool</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>load_material</code></td>
+<td>Read a lecture file from <code>materials/</code></td>
+</tr>
+<tr class="even">
+<td><code>load_study_context</code></td>
+<td>Load a study’s regression output and context</td>
+</tr>
+<tr class="odd">
+<td><code>save_question_set</code></td>
+<td>Validate and save a complete question set to disk</td>
+</tr>
+<tr class="even">
+<td><code>remove_questions</code></td>
+<td>Remove specific questions from a set by integer ID</td>
+</tr>
+<tr class="odd">
+<td><code>update_questions</code></td>
+<td>Replace specific questions in a set (full replacement by integer
+ID)</td>
+</tr>
+<tr class="even">
+<td><code>add_questions</code></td>
+<td>Append new questions to an existing set</td>
+</tr>
+<tr class="odd">
+<td><code>delete_question_sets</code></td>
+<td>Delete one or more question sets</td>
+</tr>
+<tr class="even">
+<td><code>delete_materials</code></td>
+<td>Delete one or more material files from <code>materials/</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="discovery-and-export-tools" class="section level3">
+<h3>Discovery and export tools</h3>
+<table>
+<colgroup>
+<col width="31%" />
+<col width="68%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Tool</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>list_studies</code></td>
+<td>List all studies in the session</td>
+</tr>
+<tr class="even">
+<td><code>list_materials</code></td>
+<td>List all files in <code>materials/</code></td>
+</tr>
+<tr class="odd">
+<td><code>list_question_sets</code></td>
+<td>List all question sets in the session</td>
+</tr>
+<tr class="even">
+<td><code>load_question_set</code></td>
+<td>Load the full content of a question set, including question IDs</td>
+</tr>
+<tr class="odd">
+<td><code>list_exports</code></td>
+<td>List all past exports</td>
+</tr>
+<tr class="even">
+<td><code>export_question_sets</code></td>
+<td>Export one or more question sets to PDF, TestVision, or Canvas</td>
+</tr>
+<tr class="odd">
+<td><code>delete_exports</code></td>
+<td>Delete one or more export folders</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

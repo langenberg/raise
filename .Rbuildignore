@@ -1,0 +1,12 @@
+^renv$
+^renv\.lock$
+^\.claude$
+^dev$
+^mysession$
+^mysession2$
+^resources$
+^doc$
+^Meta$
+^\.vscode$
+^Makefile$
+^CLAUDE.md$

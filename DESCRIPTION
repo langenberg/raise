@@ -1,31 +1,49 @@
-Package: raise
+Package: RAISE
 Type: Package
-Title: R with AI for Statistical Education
-Version: 0.1
-Date: 2024-06-22
-Authors@R: c(person(given = "Benedikt", family = "Langenberg",
-                    role  = c("aut", "cre"),
-                    email = "benedikt.langenberg@gmail.com")
-            )
-Maintainer: Benedikt Langenberg <benedikt.langenberg@gmail.com>
-Description: To be done.
-Depends:
-    R (>= 4.3.0)
-Imports:
-    reticulate (>= 1.30),
-    rmarkdown (>= 2.26),
-    MASS,
-    R6,
-    dplyr,
-    jsonlite,
-    readr,
-    stringr,
-    exams,
-    english
-License: GPL (>= 2)
+Title: R with AI for Statistical Education (RAISE): AI-Powered Statistics Exam Question Generator
+Version: 0.2.0
+Authors@R: person("Benedikt", "Langenberg", role = c("aut", "cre"),
+    email = "benedikt.langenberg@gmail.com")
+Description: Generates realistic exam questions grounded in simulated
+    statistical output. Uses an LLM agent to design hypothetical studies,
+    simulate datasets in R, and produce regression output that anchors exam
+    questions. Any chat provider supported by 'ellmer' can be used (Anthropic
+    Claude by default); lecture materials can be searched with BM25 or with
+    any embedding provider supported by 'ragnar'. Questions can include
+    figures and are exported to PDF, Canvas, TestVision and Markdown via
+    'exams'. The Shiny interface ('shinychat') guides lecturers through study
+    creation and question generation workflows.
+License: file LICENSE
 Encoding: UTF-8
-LazyData: true
-RoxygenNote: 7.3.1
-Suggests: 
-    testthat (>= 3.0.0)
+Roxygen: list(markdown = TRUE)
+Imports:
+    ellmer (>= 0.4.0),
+    shiny (>= 1.8.0),
+    shinychat (>= 0.3.0),
+    shinyFiles,
+    bslib,
+    htmltools,
+    pdftools,
+    jsonlite,
+    MASS,
+    lme4,
+    afex (>= 1.3-0),
+    lmerTest (>= 3.1-3),
+    callr,
+    DBI,
+    base64enc,
+    ggplot2,
+    ragnar,
+    withr
+Suggests:
+    exams,
+    R6,
+    magick,
+    renv,
+    testthat (>= 3.0.0),
+    devtools,
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.1

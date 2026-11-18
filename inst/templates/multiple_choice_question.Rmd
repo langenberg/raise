@@ -1,0 +1,23 @@
+Question
+=========
+
+{{stem}}
+{{exhibit_block}}
+```{r questionlist, echo=FALSE, results="asis"}
+exams::answerlist({{choices_r}}, markup = "markdown")
+```
+
+Solution
+=========
+
+{{explain}}
+
+```{r solutionlist, echo=FALSE, results="asis"}
+exams::answerlist({{true_false_r}}, markup = "markdown")
+```
+
+Meta-information
+================
+extype: {{extype}}
+exsolution: {{solution_str}}
+exname: raise_q_{{index}}

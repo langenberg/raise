@@ -1,0 +1,18 @@
+Question
+=========
+
+{{stem}}
+{{exhibit_block}}
+{{format_note}}
+
+Solution
+=========
+
+{{explain}}
+
+Meta-information
+================
+extype: num
+exsolution: {{correct_answer}}
+extol: {{tolerance}}
+exname: raise_q_{{index}}

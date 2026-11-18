@@ -1,0 +1,525 @@
+---
+title: "Using the RAISE Agent"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Using the RAISE Agent}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(eval = FALSE)
+```
+
+RAISE is a Shiny application that uses an AI agent — called **RAISE** throughout this document — to help university lecturers design hypothetical studies and write statistics exam questions grounded in real regression output. The agent can run on any LLM provider supported by `ellmer` (Anthropic Claude by default). This vignette explains every feature of the application.
+
+---
+
+## Launching the app
+
+```r
+library(RAISE)            # or devtools::load_all() in the package folder
+run_raise()
+```
+
+You can also pass a session path directly so the app opens that session immediately on startup (the folder is created if needed):
+
+```r
+run_raise(session_path = "~/exams/2026-spring")
+```
+
+### Choosing the language model
+
+By default RAISE uses Anthropic's `claude-sonnet-4-6` and needs the environment variable `ANTHROPIC_API_KEY` (e.g. a line `ANTHROPIC_API_KEY=...` in `~/.Renviron`). Any other chat provider supported by `ellmer` can be used instead, with `provider` and `model`:
+
+```r
+run_raise("~/exams/2026-spring", provider = "openai", model = "gpt-4.1")
+run_raise("~/exams/2026-spring", provider = "openai/gpt-4.1")          # same, one string
+run_raise("~/exams/2026-spring", provider = "google_gemini")           # ellmer's default model
+run_raise("~/exams/2026-spring", provider = "ollama/qwen3:14b")        # local model
+```
+
+- `provider` is the suffix of an `ellmer::chat_*()` function (`"anthropic"`, `"openai"`, `"google_gemini"`, `"ollama"`, `"azure_openai"`, `"aws_bedrock"`, `"openrouter"`, ...), optionally followed by `/model`.
+- `model = NULL` means `claude-sonnet-4-6` for Anthropic and the ellmer default for other providers.
+- Further arguments go to the `ellmer::chat_*()` function, e.g. `base_url` or `params`.
+- For full control, pass an ellmer chat object, which RAISE copies (your object is left as it is), or a function that builds one:
+
+```r
+my_llm <- ellmer::chat_openai(model = "gpt-4.1", base_url = "https://my-proxy/v1")
+run_raise("~/exams/2026-spring", provider = my_llm)
+```
+
+Each provider reads its own credentials (e.g. `OPENAI_API_KEY`, `GEMINI_API_KEY`); see the ellmer documentation. `check_api_key()` takes the same arguments and sends one tiny request to test them. The model must support tool calling; to let RAISE see figures it must also accept images. RAISE's prompts and tests were developed with Claude, so other models may follow the instructions less reliably.
+
+The default backend for new RAG stores is set with `embed_provider` (see [RAG Stores](#rag-stores)).
+
+RAISE is built for **shinychat 0.3.x** (pinned in the package's `renv.lock`). shinychat 0.4 and later render the chat differently; `run_raise()` warns if a newer version is installed.
+
+### The sidebar
+
+- **Session**: path field, **Browse...**, **Open**, and **Clear chat** once a session is open.
+- **Usage this session**: input, output and cached tokens and the cost so far (cost "n/a" when the provider has no price list in ellmer).
+- **Documentation**: a link to this vignette.
+- **Materials**, **Figures** and **RAG Stores** (see below).
+
+The right-hand column (the **state panel**) lists studies, question sets and exports.
+
+### Math
+
+LaTeX math (`$...$`, `$$...$$`, `\(...\)`, `\[...\]`) is rendered with MathJax in the chat and in the **Show** modals of studies, question sets and exports. Markdown has no effect inside math, so `$\widehat{happiness\_score}$` and `$a_i * b_j$` appear as written. Code (inline and fenced) is never treated as math, and `\$` is a literal dollar sign.
+
+---
+
+## Sessions
+
+All work in RAISE is stored in a **session folder** — a plain directory on your computer that you choose. The session folder is the only location RAISE can read from or write to; it never accesses files outside it.
+
+### Opening a session
+
+Type a path into the **Session** text field in the sidebar and click **Open**, or use the **Browse…** button to pick a folder with a file browser. You can also press Enter after typing a path. Relative paths are resolved from R's current working directory.
+
+If the folder does not exist yet, RAISE creates it automatically together with its subdirectories:
+
+```
+<session>/
+  materials/       <- uploaded lecture files
+  figures/         <- figures used in questions
+  studies/         <- one subfolder per study (design, data.csv, regression output)
+  question_sets/   <- one JSON file per question set
+  exports/         <- one subfolder per export
+  rag/             <- one subfolder per RAG store (created on first RAG build)
+  chat.rds         <- the conversation
+```
+
+### Session persistence
+
+Every conversation turn is saved to `<session>/chat.rds` automatically after each exchange. When you reopen an existing session, the full conversation history is restored exactly as you left it — tool results, formatted output, and all — so RAISE can continue where you left off without losing context.
+
+### Clearing the chat
+
+While a session is open, a **Clear chat** button appears below the Open button. Clicking it deletes `chat.rds` and starts a fresh conversation with RAISE. The studies, question sets, materials, and exports in the session folder are **not** affected — only the conversation history is reset. RAISE will greet you again and summarise the existing session content.
+
+---
+
+## Materials
+
+Lecture slides, reading excerpts, or any other reference text can be uploaded as **materials**. RAISE can read material files and use their content as the basis for exam questions.
+
+### Uploading a material
+
+Use the **Upload…** button in the Materials section of the sidebar. Supported formats are PDF, Markdown (`.md`), and plain text (`.txt`). The file is copied to `<session>/materials/` and immediately listed below the upload button.
+
+### Using materials in question generation
+
+Once a file is uploaded, tell RAISE to use it:
+
+> *"Generate five questions based on lecture3.pdf."*
+
+If a RAG store is **active** (see [RAG Stores](#rag-stores) below), RAISE calls `search_materials` to retrieve the most relevant chunks from the indexed materials before generating questions. If no RAG store is active, RAISE falls back to `load_material`, which reads the complete file. RAISE can combine material content with regression output from a study in the same set of questions.
+
+### Viewing a material
+
+**Show** next to a material opens it in a large window: PDFs page by page at the full width of the window (with a link to open the file in a new tab), Markdown rendered, plain text as is.
+
+### Deleting a material
+
+Each material entry in the sidebar has a **Delete** button. Clicking it once shows an inline *"Delete? Yes / Cancel"* confirmation. Clicking **Yes** permanently removes the file from `materials/`. You can also ask RAISE:
+
+> *"Delete the file lecture3.pdf."*
+
+RAISE will ask you to confirm before removing it.
+
+---
+
+## Figures {#figures}
+
+Questions can show figures: plots, diagrams, screenshots. All figures of a session live in `<session>/figures/`.
+
+### Adding figures
+
+- **Upload** PNG or JPEG files with the **Upload...** button in the **Figures** section of the sidebar. RAISE receives the image together with a notification, so it can see what the figure shows and write questions about it.
+- **Ask RAISE to draw one** from a simulated study's data: *"Make a boxplot of exam_score by location."* `create_figure` draws a scatter plot (optionally coloured by a group, with least-squares lines), boxplot, histogram or bar chart (group means, e.g. pass rates for a 0/1 outcome, or counts). RAISE sees the result before using it.
+- **From R:** `add_figure("plot.png", "path/to/session")` or `create_figure(...)`.
+
+Each file is stored as `<name>_<hash>.png`, where the hash comes from the image content. Adding the same image twice keeps one copy; two different images never get the same name; and a saved figure never changes.
+
+### Using figures in questions
+
+A question (or exhibit, explanation, answer choice) shows a figure with a Markdown image reference:
+
+```
+![Exam score by study location](figures/score_by_location_3fa2c1d9.png)
+```
+
+Add `{width=50%}` after the reference to change the size (default 60% in PDF, Canvas and TestVision). Saving a question fails if a referenced figure does not exist. The **Show** modals display the figures.
+
+### Changing and removing figures
+
+- To change a figure, upload or create the new one and ask RAISE to replace the old one: `replace_figure` updates every question that used it.
+- Each figure in the sidebar shows how many questions use it (hover for the list) or **unused**. **Show** opens it with its reference; **Delete** removes it (with a warning if questions still use it). **Delete unused** removes every figure no question uses. Deleting a question set does not delete its figures.
+
+### Figures in exports
+
+| Format | Figures |
+|--------|---------|
+| PDF | Drawn in place, centred, no caption |
+| Canvas / TestVision | Packed into the ZIP and shown inline |
+| Markdown | Linked as `figures/<file>`, with the files copied to `figures/` next to the `.md`; the download is then a ZIP. `questions_to_markdown(..., figures = "embed")` puts the images into the Markdown itself (one self-contained file). |
+
+Width attributes (`{width=50%}`) are Pandoc/Quarto syntax; Jupyter shows them as text.
+
+---
+
+## RAG Stores {#rag-stores}
+
+A **RAG store** (Retrieval-Augmented Generation store) is a searchable index built from one or more material files. When a RAG store is active, RAISE can search it with `search_materials` to find the most relevant passages for a given query, instead of loading entire files into context. This is faster, uses fewer tokens, and scales to large document collections.
+
+RAG stores are first-class session artefacts: they are created, stored in `<session>/rag/`, and persist across sessions. Multiple stores can coexist; the agent queries all active stores simultaneously. Connection to a store happens automatically on the first search — no manual connect step is needed.
+
+### Backends
+
+| Backend | How it works | External service needed? |
+|---------|--------------|--------------------------|
+| **BM25 keyword** | Keyword-frequency index — no embeddings | Never |
+| **Ollama local embeddings** | Neural embeddings via a local Ollama process | Ollama must be running at build and query time |
+| **OpenAI embeddings** | Neural embeddings via the OpenAI Embeddings API | OpenAI API key required; file content sent to OpenAI at build time, the query at search time |
+| **Other embedding providers** | Any `ragnar::embed_*()` provider: `google_gemini`, `google_vertex`, `azure_openai`, `bedrock`, `databricks`, `lm_studio`, `snowflake` | That provider's service and credentials |
+
+BM25 requires no external service and works entirely offline. It is the default and recommended for most use cases. To make another backend the default in the dialog, start the app with `embed_provider` (and optionally `embed_model`):
+
+```r
+run_raise("~/exams/2026-spring", embed_provider = "ollama")                     # nomic-embed-text
+run_raise("~/exams/2026-spring", embed_provider = "google_gemini", embed_model = "gemini-embedding-001")
+```
+
+A provider other than BM25, Ollama and OpenAI then also appears as a choice in the dialog. From R, `build_rag_store(rag_dir, files, provider = "bm25", settings)` takes the same provider names.
+
+### Creating a RAG store
+
+Click **Create RAG** at the bottom of the **RAG Stores** section of the state panel. A modal opens with:
+
+1. **Select materials** — checkboxes for all files currently in `materials/`. All files are pre-checked; uncheck any you want to exclude.
+2. **Backend** — choose BM25, Ollama, or OpenAI (plus the app's `embed_provider` if it is another one). The default is BM25 unless the app was started with another `embed_provider`.
+3. **Chunk size** — number of characters per indexed chunk (200–1 000, default 500). Smaller chunks give more precise retrieval; larger chunks preserve more context per result.
+4. For an embedding backend: **Embedding model** (defaults: `nomic-embed-text` for Ollama, `text-embedding-3-small` for OpenAI, the provider's default otherwise; leave empty for the provider default).
+
+Click **Create**. A progress modal appears while the store is built. Once done, a card appears in the RAG Stores section.
+
+### RAG store cards
+
+Each card shows:
+
+- **Active / Inactive badge** — green `Active` when the store is included in default `search_materials` calls; grey `Inactive` when excluded.
+- **Provider badge** — `bm25` or the embedding provider (`ollama`, `openai`, ...).
+- **Sync badge** — `in sync` (green) when the indexed files match the current `materials/` folder; `out of sync` (yellow) when files have been added, removed, or modified since the last build.
+- **File count** — number of files indexed.
+- **Activate / Deactivate** — toggles whether the store is included when the agent calls `search_materials` without explicit `rag_ids`. The first search after activation auto-connects to the store; a message appears in the R console confirming the connection.
+- **Show** — reopens the create modal pre-populated with the store's existing settings. Use this to rebuild the index after adding or modifying materials. The store is rebuilt from scratch; the folder name is preserved.
+- **Delete** — two-step Yes / Cancel confirmation; permanently removes the store folder.
+
+### Searching with RAISE
+
+Once at least one store is **active**, RAISE automatically uses `search_materials` when generating questions from materials:
+
+> *"Generate questions based on the lecture slides."*
+
+RAISE issues a targeted search query, retrieves the top-ranked chunks, and grounds questions in that content. You can also ask explicitly:
+
+> *"Search the RAG store for content about regression diagnostics."*
+
+`search_materials` returns chunks labelled by source file (e.g. `[Source: lecture3.pdf]`). For each active store, the top `n` chunks (default 5) are returned. If a store is out of sync with `materials/`, a warning prefix is prepended to its results but retrieval still proceeds.
+
+You can also tell RAISE to search specific stores by name:
+
+> *"Search only the BM25 store for content about residuals."*
+
+RAISE will call `list_rags` to discover available store IDs, then pass them explicitly to `search_materials`.
+
+Use `load_material` instead when you need the **complete text** of one specific file and the file is short enough to fit in context.
+
+### Sync status
+
+The **out of sync** badge appears when the files indexed in a store differ from the current `materials/` folder — because a file was uploaded, deleted, or modified after the store was built. An out-of-sync store is still fully usable; it simply reflects an older snapshot of the materials. Click **Show** then **Update** to rebuild it.
+
+---
+
+## Studies
+
+A **study** is a fully designed and simulated statistical scenario: a hypothetical empirical study with defined variables, a predictor correlation structure, regression coefficients, random-effects covariance, and the regression output produced by running `lm()`, `glm()`, `lmer()`, or `glmer()` in R. Studies are the numerical foundation for exam questions — every number in a question must come from a study's R output, never from the model's imagination.
+
+Each study is stored as a subfolder inside `<session>/studies/` (`study_design.json`, and after simulation `data.csv`, `regression.txt` and, for logistic models, `odds_ratios.txt`). Its status shows how far the design has got:
+
+| Status | Badge | Meaning |
+|--------|-------|---------|
+| `description_saved` | 🟡 | Title, context and variables saved (Step 2) |
+| `correlations_set` | 🟠 | Predictor correlations saved (Step 3) |
+| `coefficients_set` | 🔵 | Coefficients (and residual SD) saved (Step 4) |
+| `random_effects_set` | ⚪ | Random effects saved (Step 5, designs with repeated measures) |
+| `design_saved` | ⚪ | Complete design saved in one call (`save_study` shortcut) |
+| `simulated` | 🟢 | Data simulated; regression output available |
+
+Redoing a step resets the later ones; the study must then be simulated again.
+
+### Supported model types
+
+RAISE supports three families of models, covering both fixed-effects and mixed designs:
+
+| Family | Between-subjects | With repeated measures | Use case |
+|--------|------------------|------------------------|----------|
+| `identity+normal` | `lm()` | `lmerTest::lmer()`, or a repeated-measures ANOVA (`afex::aov_ez()`) when an LMM is not identified (one observation per condition, or residual SD 0) | Continuous outcome |
+| `logit+binomial` | `glm(binomial)` | `lme4::glmer(binomial)` | Binary outcome |
+| `log+poisson` | `glm(poisson)` | `lme4::glmer(poisson)` | Count outcome |
+
+Between-subjects designs have no random effects. Designs with within-subjects variables get a subject-level random intercept and, if requested, random slopes.
+
+### Creating a study
+
+Tell RAISE what you want:
+
+> *"Create a study about exam performance and study habits."*
+
+RAISE then works through six steps, showing each step and asking for your confirmation before saving it:
+
+1. **Family and design.** The outcome family (linear, logistic, Poisson) and the design (purely between-subjects, purely within-subjects, mixed, or fully customised). You can also describe the study in plain language and let RAISE choose.
+2. **Theme, context and variables** (`save_description`). Title, a context paragraph, the number of subjects (and repetitions per condition), the subject ID column, and the variables: name, label, type (continuous, binary, categorical), between or within, and the distribution (mean, SD) or group proportions.
+3. **Correlations** (`save_correlations`). Correlations between pairs of predictors.
+4. **Coefficients** (`save_coefficients`). Intercept, one coefficient per continuous predictor and per non-reference category, interactions, and the residual SD for linear models. RAISE shows the model equation with the variable names filled in.
+5. **Random effects** (`save_random_effects`), for designs with repeated measures: random intercept variance and, if wanted, random slopes, with a sphericity or compound-symmetry structure or a custom covariance.
+6. **Simulation** (`simulate_study`). R draws the data and fits the model; RAISE shows the fitted equation, the coefficient table, variance components (mixed models) and odds ratios with 95% CIs (logistic models), and asks whether you are happy with the result.
+
+How the design maps onto the data:
+
+- Continuous predictors are drawn with the given mean and SD. The **intercept** is the expected outcome at the means of the continuous predictors (and the reference categories), so it stays on a plausible scale; in the fitted output, which uses the raw predictors, the intercept refers to predictor value 0 instead.
+- Binary and categorical predictors are drawn as a hidden normal score that is cut into the categories with the given proportions, in the order of the category keys. A correlation involving such a variable is the correlation with that hidden score (the study's **Show** window explains this under the correlation table); the correlation in the data is somewhat weaker.
+
+`save_study` saves a complete design in one call. RAISE uses it only when you ask to skip the steps, or to copy and modify an existing study.
+
+### Study cards in the state panel
+
+The right-hand column of the app shows the **state panel**, which lists all studies in the current session. Each study card displays the title, a colour-coded status badge, and the model family. Two buttons are available:
+
+- **Download csv** — the simulated data (once simulated).
+- **Show** — opens a modal with the full study design: context, variables (name, label, type, level, distribution/proportion), the predictor correlations (with a note on binary and categorical variables), the coefficients table, the random effects, and the regression output (once simulated). For logistic models the odds ratio table is shown as well.
+- **Delete** — clicking once shows an inline *"Delete? Yes / Cancel"* confirmation. Clicking **Yes** permanently deletes the study folder and all its simulation artefacts. Any question sets that still reference the deleted study will show a warning badge.
+
+You can also ask RAISE to delete studies via chat:
+
+> *"Delete the exam performance study."*
+
+---
+
+## Question Sets
+
+A **question set** is a named collection of exam questions saved as a JSON file in `<session>/question_sets/`. Each question set is linked to a study, a set of materials, or both. Questions come in two types:
+
+- **Multiple choice** (badge `MC`, blue) — at least four choices, one or more marked correct.
+- **Numeric** (badge `#`, grey) — a single numerical answer. How many decimals students must give (and the tolerance in Canvas/TestVision) is chosen at export time.
+
+Every question has an explanation, and optionally an **exhibit** (an excerpt of R output shown with the question). Questions can show figures (see [Figures](#figures)) and LaTeX math.
+
+### Generating questions
+
+Tell RAISE which source to use and how many questions you want:
+
+> *"Write six questions based on the exam performance study."*
+
+> *"Generate four questions from lecture3.pdf — two multiple choice and two numeric."*
+
+RAISE reads the source (calling `load_study_context` or `load_material` as needed), drafts the questions in its response, and asks: *"Shall I save these N questions, or would you like to adjust anything?"* All numerical values are taken directly from the R output — RAISE never invents numbers.
+
+After you confirm, RAISE calls `save_question_set` and the set appears immediately in the state panel.
+
+### Editing question sets
+
+You can ask RAISE to revise a saved set at any point:
+
+> *"Remove question 3 from the exam performance set."*
+
+> *"Rewrite question 2 to focus on the confidence interval instead."*
+
+> *"Add two more questions about model fit."*
+
+RAISE uses `remove_questions`, `update_questions`, and `add_questions` respectively. It always loads the set first to look up the integer question IDs, and asks for your confirmation before modifying the file. Question IDs are never reused, even after deletions. Saving fails, with a message naming the question, when a question is incomplete or refers to a figure that does not exist.
+
+### Question set cards in the state panel
+
+Each question set card shows the topic name, the question count, and a row of type badges — one `MC` or `#` badge per question; hovering over a badge shows the first 90 characters of the question text. A warning label (`[!] study deleted`) appears if the linked study has been removed. Two buttons are available:
+
+- **Show** — opens a modal with the full question set: metadata (linked study, source materials, creation date, model) and every question with its exhibit, figures, choices or answer, and explanation, with math rendered. Correct choices are highlighted in green.
+- **Delete** — two-step Yes / Cancel confirmation; permanently removes the JSON file.
+
+Deleting a question set via RAISE:
+
+> *"Delete the question set about regression diagnostics."*
+
+---
+
+## Exporting Question Sets
+
+Question sets can be exported to four formats:
+
+| Format | Output | Suitable for |
+|--------|--------|-------------|
+| `PDF` | PDF file | Printing / manual upload |
+| `TestVision` | ZIP archive | TestVision LMS |
+| `Canvas` | ZIP archive | Canvas LMS |
+| `Markdown` | `.md` file | Notebooks, Quarto documents, course pages |
+
+Export requires LaTeX to be installed on your system for PDF output. TestVision and Canvas exports produce ZIP archives (built with the `exams` package). For questions linked to a study, the study's regression output is shown above each question in every format.
+
+PDF and Markdown exports can leave out the answers and explanations (**Include answers and explanations** unchecked in the export dialog, or `answers = FALSE`), e.g. for a student handout. Canvas and TestVision always include them, since the LMS needs them for grading. For these two formats the setting is ignored: the app shows a notification, and from R (or through RAISE) you get a warning and a note in the returned message. The export's **Show** modal says whether the answers are included.
+
+### Exporting via the state panel
+
+Click **Export** below the question sets. The export dialog lists all question sets with a checkbox each (and the types of their questions); all checked sets are merged into one export. Then set:
+
+1. **Export label** (required, e.g. `Midterm Exam 2026`): names the export folder (`<label>_<timestamp>`).
+2. **Format**: PDF, TestVision, Canvas or Markdown.
+3. **Decimal places for numeric questions**: Fixed 1, 2 or 3, or Auto (from the correct answer). Answers are rounded accordingly, and Canvas/TestVision get the matching tolerance.
+4. **Show precision note**: adds a line under each numeric question saying how many decimals to give.
+5. **Include answers and explanations** (see above).
+
+Click **Export**. If the export fails (for instance because of invalid LaTeX in a question), the dialog stays open and a notification names the questions that fail on their own.
+
+### Exporting via RAISE
+
+You can also ask RAISE to export directly from the chat:
+
+> *"Export the exam performance question set as PDF."*
+
+> *"Export all question sets together as a TestVision ZIP, with the label 'midterm'."*
+
+RAISE asks for the label and confirms the destination format before calling `export_question_sets`. From R: `export_question_sets(qset_ids, session_path, label, destination, precision_mode, n_digits, include_precision_note, answers)`.
+
+### Export cards in the state panel
+
+Completed exports appear in the **Exports** section of the state panel, listed newest first. Each export card shows the destination format, timestamp, question count, and filename. Three buttons are available:
+
+- **Show** — opens a modal with the export metadata (format, number of questions, whether answers are included) and a preview of every question in the combined set.
+- **Download** — downloads the `.pdf`, `.zip` or `.md` file; a Markdown export with figures downloads as a ZIP (the `.md` plus its `figures/` folder).
+- **Delete** — two-step Yes / Cancel confirmation; permanently removes the export folder.
+
+You can also list or delete exports via RAISE:
+
+> *"Show me all past exports."*
+
+> *"Delete the export from last week."*
+
+---
+
+## Talking to RAISE
+
+RAISE is a conversational agent. You do not need to use menus or buttons for most actions — describing what you want in plain language is sufficient. Examples:
+
+| You say | What RAISE does |
+|---------|-----------------|
+| *"Create a study about burnout in healthcare workers."* | Starts the study creation workflow |
+| *"The correlation between age and tenure should be higher, around 0.6."* | Regenerates and resaves the study design with updated correlations |
+| *"Simulate the study."* | Calls `simulate_study` and shows the regression output |
+| *"Write 5 questions based on this study."* | Loads study context and drafts questions |
+| *"Reword question 4 to be clearer."* | Calls `update_questions` after loading question IDs |
+| *"Delete the burnout study."* | Asks for confirmation, then calls `delete_studies` |
+| *"Export the burnout questions as PDF."* | Asks for confirmation, then calls `export_question_sets` |
+
+RAISE always asks for your confirmation before writing, modifying, or deleting anything on disk.
+
+### Sandbox guarantee
+
+RAISE reads and writes **only within the active session folder**. It cannot access files elsewhere on your system, make network requests (other than to the configured LLM and embedding providers), or execute arbitrary code outside the controlled simulation pipeline.
+
+---
+
+## Scripted use (without the app)
+
+The agent also runs from an R script. It uses the same system prompt and tools as the app and works on the same session folders.
+
+```r
+check_api_key()                      # one tiny request; stops with the API error if the key fails
+chat <- raise_chat("path/to/session")
+chat$chat("List the question sets in this session.")
+
+# another provider: same arguments as run_raise()
+check_api_key("openai", model = "gpt-4.1")
+chat <- raise_chat("path/to/session", provider = "openai", model = "gpt-4.1")
+```
+
+### Questions as Markdown
+
+`questions_to_markdown()` returns the questions of one or more sets as Markdown, with or without answers, and can write them to a file. The rounding note and rounded answers are the same as in the other exports; math stays LaTeX.
+
+```r
+questions_to_markdown("lecture1", "path/to/session", answers = FALSE,
+                      file = "quiz.md")                 # questions only
+questions_to_markdown("lecture1", "path/to/session", answers = TRUE,
+                      heading_level = 3, choice_style = "letter")
+```
+
+`format_questions()` returns the same content as an R list (one element per question with its text, choices, rounded answer and rounding note), for building other formats.
+
+### Importing quizzes from the legacy `raise` package
+
+Quizzes saved by the old `raise` package (`.RData` files with a `QuizSlides` object) can be imported as question sets:
+
+```r
+import_legacy_quiz("old/quiz1.RData", "path/to/session",
+                   qset_id = "lecture1", topic = "Lecture 1 quiz")
+```
+
+The file is opened in a separate R process and only the questions are copied: no chat history and no stored API key. The new set records the source file in `imported_from` and can be edited and exported like any other set.
+
+---
+
+## Agent tool reference
+
+The following 31 tools are available to RAISE. They are called automatically during conversation — you do not invoke them directly. Most of them are also exported R functions with the same name, documented in the package help.
+
+### Study creation tools
+
+| Tool | Description |
+|------|-------------|
+| `save_description` | Step 2: save title, context, family, subjects and variables; returns the study ID |
+| `save_correlations` | Step 3: save the predictor correlations |
+| `save_coefficients` | Step 4: save the coefficients and residual SD |
+| `save_random_effects` | Step 5: save random-effects variances and covariances |
+| `save_study` | Shortcut: save a complete design in one call (only on request, or to copy a study) |
+| `simulate_study` | Step 6: run the R simulation and produce regression output |
+| `delete_studies` | Delete one or more studies and all their artefacts |
+
+### Question generation and editing tools
+
+| Tool | Description |
+|------|-------------|
+| `search_materials` | Search active RAG stores for content relevant to a query; accepts optional `rag_ids` to target specific stores |
+| `list_rags` | List all RAG stores with their IDs, labels, providers, active status, and sync status |
+| `set_rag_active` | Activate or deactivate a RAG store; active stores are searched automatically by `search_materials` |
+| `delete_rags` | Delete one or more RAG stores and all their artefacts |
+| `load_material` | Read the complete text of a lecture file from `materials/` |
+| `load_study_context` | Load a study's regression output and context |
+| `save_question_set` | Validate and save a complete question set to disk |
+| `remove_questions` | Remove specific questions from a set by integer ID |
+| `update_questions` | Replace specific questions in a set (full replacement by integer ID) |
+| `add_questions` | Append new questions to an existing set |
+| `delete_question_sets` | Delete one or more question sets |
+| `delete_materials` | Delete one or more material files from `materials/` |
+
+### Discovery and export tools
+
+| Tool | Description |
+|------|-------------|
+| `list_studies` | List all studies in the session |
+| `list_materials` | List all files in `materials/` |
+| `list_question_sets` | List all question sets in the session |
+| `load_question_set` | Load the full content of a question set, including question IDs |
+| `list_exports` | List all past exports |
+| `export_question_sets` | Export one or more question sets to PDF, TestVision, Canvas, or Markdown |
+| `delete_exports` | Delete one or more export folders |
+
+### Figure tools
+
+| Tool | Description |
+|------|-------------|
+| `list_figures` | List the figures in `figures/` and which questions use them |
+| `view_figure` | Look at a figure (the image is sent to the model) |
+| `create_figure` | Draw a scatter plot, boxplot, histogram or bar chart from a simulated study's data |
+| `replace_figure` | Point every question that uses one figure at another figure |
+| `delete_figures` | Delete figures; figures in use only with `force` |
