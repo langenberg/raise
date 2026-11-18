@@ -502,11 +502,9 @@ export_question_sets <- function(qset_ids, session_path, label,
   if (length(combined_questions) == 0L)
     return("Error: no questions found in the selected question sets.")
 
-  ts          <- format(Sys.time(), "%Y%m%d_%H%M%S")
-  slug        <- to_snake_case(label)
-  combined_id <- paste0(slug, "_", ts)
-  out_dir     <- file.path(session_path, "exports", combined_id)
-  dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+  out_dir     <- new_export_dir(session_path, to_snake_case(label),
+                                format(Sys.time(), "%Y%m%d_%H%M%S"))
+  combined_id <- basename(out_dir)
 
   combined_json <- list(
     id               = combined_id,
@@ -569,6 +567,20 @@ export_question_sets <- function(qset_ids, session_path, label,
   paste0("Exported ", length(combined_questions), " question(s) to '",
          combined_id, "' (", destination, ").",
          if (!is.null(note)) paste0(" Note: ", note) else "")
+}
+
+# Creates exports/<slug>_<ts>; if that exists (two exports with the same label in one
+# second), exports/<slug>_<ts>_2, _3, ... so an export never writes into another one.
+new_export_dir <- function(session_path, slug, ts) {
+  base <- file.path(session_path, "exports", paste0(slug, "_", ts))
+  dir  <- base
+  k    <- 1L
+  while (dir.exists(dir)) {
+    k   <- k + 1L
+    dir <- paste0(base, "_", k)
+  }
+  dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+  dir
 }
 
 #' Delete an export folder and all its artifacts.

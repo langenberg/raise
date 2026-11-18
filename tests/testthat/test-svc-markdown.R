@@ -163,6 +163,17 @@ test_that("export_question_sets writes a json export that list_exports finds", {
   })
 })
 
+test_that("new_export_dir never reuses a folder (same label, same second)", {
+  withr::with_tempdir({
+    a <- new_export_dir(".", "quiz", "20260101_000000")
+    b <- new_export_dir(".", "quiz", "20260101_000000")
+    c <- new_export_dir(".", "quiz", "20260101_000000")
+    expect_equal(basename(c(a, b, c)),
+                 c("quiz_20260101_000000", "quiz_20260101_000000_2", "quiz_20260101_000000_3"))
+    expect_true(all(dir.exists(c(a, b, c))))
+  })
+})
+
 test_that("export_artifact ignores combined.json and meta.json", {
   withr::with_tempdir({
     dir.create("e_20260101_000000")
